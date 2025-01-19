@@ -22,79 +22,88 @@ using ScheduleListType = std::map<std::string, std::unordered_set<std::string>>;
 */
 class Schedule {
 private:
-	/**
-	* @brief a map that stores schedule with datetime as the key and task as the value.
-	*/
-	ScheduleListType mScheduleList;
+    /**
+    * @brief a map that stores schedule with datetime as the key and task as the value.
+    */
+    ScheduleListType mScheduleList;
 
-	/**
-	* @brief a maximum number of schedule allowed to store.
-	*/
-	const size_t mMaxScheduleNumber;
+    /**
+    * @brief a maximum number of schedule allowed to store.
+    */
+    const size_t mMaxScheduleNumber;
 
-	/**
-	* @brief a current total number of schedule.
-	*/
-	size_t mCurrentScheduleNumber;
+    /**
+    * @brief a current total number of schedule.
+    */
+    size_t mCurrentScheduleNumber;
 
-	/**
-	* @brief a shared mutex for multi-thread to add a schedule and to search for the schedule list
-	*/
-	std::shared_timed_mutex mSharedMutex;
+    /**
+    * @brief a shared mutex for multi-thread to add a schedule and to search for the schedule list
+    */
+    std::shared_timed_mutex mSharedMutex;
+
+    /**
+    * @brief validate whether the input datetime format matches YYYYMMDDHHMM.
+    *
+    * @param[in] dateTime: the input date and time
+    * @return if the input datetime is correct return ture, otherwise return false.
+    */
+    bool isValidDateTime(const std::string& dateTime);
+
+    /**
+    * @brief extract the task information, limiting its length to a maximum of 256 characters or stopping at the first not full-width character.
+    *
+    * @param[in] task: the input task info.
+    *
+    * @return the task info after validation.
+    */
+    std::string extractTaskInfo(const std::string& task);
 
 protected:
-	/**
-	* @brief the last error message of the process.
-	*/
-	std::string mLastErrorMsg;
+    /**
+    * @brief the last error message of the process.
+    */
+    std::string mLastErrorMsg;
 
 public:
-	/**
-	* @brief construct a schedule object with a maximum number of schedule.
-	*
-	* @param[in] maxCount: the maximum number of schedule allowed to store.
-	*/
-	Schedule(size_t maxCount);
+    /**
+    * @brief construct a schedule object with a maximum number of schedule.
+    *
+    * @param[in] maxCount: the maximum number of schedule allowed to store.
+    */
+    Schedule(size_t maxCount);
 
-	/**
-	* @brief destruct the schedule object.
-	*/
-	virtual ~Schedule();
+    /**
+    * @brief destruct the schedule object.
+    */
+    ~Schedule();
 
-	/**
-	* @brief get the last error message of the process
-	*
-	* @return the last error message
-	*/
-	std::string getLastErrorMsg() const;
+    /**
+    * @brief get the last error message of the process
+    *
+    * @return the last error message
+    */
+    std::string getLastErrorMsg() const;
 
-	/**
-	* @brief add a schedule to the schedule list with thread-safe.
-	*
-	* @param[in] dateTime: the date and time of the schedule in YYYYMMDDhhmm format.
-	* @param[in] task: the task or event to be scheduled.
-	*
-	* @return if a schedule is added successfully return true, otherwise return false.
-	*/
-	bool addSchedule(const std::string& dateTime, const std::string& task);
+    /**
+    * @brief add a schedule to the schedule list with thread-safe.
+    *
+    * @param[in] dateTime: a date and time of the schedule in YYYYMMDDhhmm format.
+    * @param[in] task: a task or event to be scheduled.
+    *
+    * @return if a schedule is added successfully return true, otherwise return false.
+    */
+    bool addSchedule(const std::string& dateTime, const std::string& task);
 
-	/**
-	* @brief get the range of the schedule list from start to end datetime with thread-safe.
-	*
-	* @param[in] start: the start datetime.
-	* @param[in] end: the end datetime.
-	*
-	* @return a pair of const iterator to point to the range of schedule list 
-	*/
-	std::pair<ScheduleListType::const_iterator, ScheduleListType::const_iterator> searchSchedule(const std::string& startT, const std::string& endT);
-
-	/**
-	* @brief provide a default a way to validate the input datetime. override this function to validate the datetime as your own way.
-	*
-	* @param[in] dateTime: the input date and time
-	* @return if the input datetime is correct return ture, otherwise return false.
-	*/
-	virtual bool isValidDateTime(const std::string& dateTime);
+    /**
+    * @brief get the range of the schedule list from start to end datetime with thread-safe.
+    *
+    * @param[in] start: the start datetime.
+    * @param[in] end: the end datetime.
+    *
+    * @return a pair of const iterator to point to the range of schedule list
+    */
+    std::pair<ScheduleListType::const_iterator, ScheduleListType::const_iterator> searchSchedule(const std::string& startT, const std::string& endT);
 };
 
 }	// namespace MySchedule

@@ -3,6 +3,7 @@
 
 using namespace std;
 
+
 int main(void) {
 	//std::cout << "my console app is running..." << std::endl;
 
@@ -16,10 +17,10 @@ int main(void) {
 		myTodoList.addSchedule("201404051610", "‚ ‚è‚ª‚Æ‚¤‚²‚´‚¢‚Ü‚·A‚");
 		myTodoList.addSchedule("202309010900", "”æ‚ê—l‚Å‚·Ha");
 		myTodoList.addSchedule(date1, task);
-		std::cout << myTodoList.getLastErrorMsg() << std::endl;
+
+        std::cout << "ErrorMsg=" << myTodoList.getLastErrorMsg() << std::endl;
 	}
 
-	//date1 = "123";
 	auto startTime = "199205150100";
 	auto endTime = "202312310659";
 	auto result = myTodoList.searchSchedule(startTime, endTime);
@@ -28,10 +29,9 @@ int main(void) {
 	auto startIndex = result.first;
 	auto endIndex = result.second;
 	
-	const string tmp = "modified";
 	while (startIndex != endIndex) {
 		cout << startIndex->first;
-		for (auto& data : startIndex->second) {
+		for (const auto& data : startIndex->second) {
 			cout << "\n    " << data << " data.length =" << data.size();
 		}
 		cout << endl;
