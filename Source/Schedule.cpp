@@ -1,7 +1,6 @@
 #include "Schedule.h"
 #include <algorithm>
 
-
 namespace MySchedule {
 /**
 * @brief the length of date-time format is 12
@@ -108,51 +107,62 @@ bool Schedule::isValidDateTime(const std::string& dateTime) {
 
 std::string Schedule::extractTaskInfo(const std::string& task) {
     size_t curPos = 0;
+    size_t charLength = 0;
+    int validatedCount = 0;
 
-    while (curPos < task.length()) {
-        unsigned char c = task[curPos];
-
-        // determine byte length of the current character
-        size_t charLength = 0;
-        if ((c & 0x80) == 0x00) {
+    while ((validatedCount < TASK_INFO_MAX_NUMBER) && (curPos < task.length())) {
+        // determine byte length of the first character
+        unsigned char byte1 = static_cast<unsigned char>(task[curPos]);
+        if ((byte1 & 0x80) == 0x00) {
             // single-byte character (ASCII)
             charLength = 1;
         }
-        else if ((c & 0xE0) == 0xC0) {
+        else if ((byte1 & 0xE0) == 0xC0) {
             // two-byte character
             charLength = 2;
         }
-        else if ((c & 0xF0) == 0xE0) {
-            // three-byte character (likely Japanese)
+        else if ((byte1 & 0xF0) == 0xE0) {
+            // three-byte character
             charLength = 3;
         }
-        else if ((c & 0xF8) == 0xF0) {
-            // four-byte character (e.g., rare kanji or emoji)
+        else if ((byte1 & 0xF8) == 0xF0) {
+            // four-byte character (rare extension kanji or emoji)
             charLength = 4;
         }
-
-        if (charLength != 3) { // // for common japanese characters, they are 3-byte sequences in UTF-8. for extension there is 4 bytes japanese but exception
+        else {
+            mLastErrorMsg = "encoding of the input data is not UTF-8!";
             break;
         }
 
-        // extract Unicode code point
-        uint32_t codePoint = ((c & 0x0F) << 12) | ((task[curPos + 1] & 0x3F) << 6) | (task[curPos + 2] & 0x3F);
-
-        // Check if the code point is within Japanese character ranges
-        if ((codePoint >= 0x3040 && codePoint <= 0x30FF) || // Hiragana(3040 ` 309F) & Katakana(30A0 ` 30FF)
-            (codePoint >= 0x4E00 && codePoint <= 0x9FFF) || // Common Kanji
-            (codePoint >= 0xFF00 && codePoint <= 0xFFEF) || // Full-width forms:number = FF01 ` U+FF5E
-            (codePoint == 0x3000) )                          // full-width whitespace
-        {
-            curPos += 3; // Move to the next character
-            continue;
+        if (charLength != 3) { // common japanese characters are 3-byte sequences in UTF-8.
+            mLastErrorMsg = "the character is not the first character of 3-byte UTF-8!";
+            break;
         }
 
+        // check continuation bytes of 3-byte UTF-8:https://en.wikipedia.org/wiki/UTF-8
+        unsigned char byte2 = task[curPos + 1];
+        unsigned char byte3 = task[curPos + 2];
+        if (((byte2 & 0xC0) != 0x80) || ((byte3 & 0xC0) != 0x80)) {
+            mLastErrorMsg = "the character is not the second or third character of 3-byte UTF-8!";
+            break;
+        }
+
+        // 3-byte UTF-8  <=> code point
+        uint32_t codePoint = ((byte1 & 0x0F) << 12) | ((byte2 & 0x3F) << 6) | (byte3 & 0x3F);
+
+        // check if the code point is within Japanese full-width character ranges: http://www.rikai.com/library/kanjitables/kanji_codes.unicode.shtml
+        if ((codePoint >= 0x3000 && codePoint <= 0x30FF) || // Full-width punctuation(3000 ` 303F) and Hiragana(3040 ` 309F) and Katakana(30A0 ` 30FF)
+            (codePoint >= 0x4E00 && codePoint <= 0x9FFF) || // Common Kanji
+            (codePoint >= 0xFF01 && codePoint <= 0xFF5E))   // Full-width alphanumeric and unctuation 
+        {
+            ++validatedCount;
+            curPos += 3; // move to the next character in 3-byte sequences UTF-8
+            continue;
+        }
         break;
-       
     }
 
-    return task.substr(0, curPos);;
+    return std::move(task.substr(0, curPos));
 }
 
 bool Schedule::addSchedule(const std::string& dateTime, const std::string& task) {
@@ -163,11 +173,11 @@ bool Schedule::addSchedule(const std::string& dateTime, const std::string& task)
     }
 
     // check input task
-    if (task.empty()) {
+    std::string extractedTaskInfo = extractTaskInfo(task);
+    if (extractedTaskInfo.empty()) {
         mLastErrorMsg = "the input task is empty!";
         return false;
     }
-    std::string extractedTaskInfo = extractTaskInfo(task);
 
     // use exclusive lock to add a schedule
     std::unique_lock<decltype(mSharedMutex)> lock(mSharedMutex);
