@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['isvaliddatetime_0',['isValidDateTime',['../class_my_schedule_1_1_schedule.html#a225e9e5c28c56c30ca8814f1ff2d42fa',1,'MySchedule::Schedule']]]
+  ['mlasterrormsg_0',['mLastErrorMsg',['../class_my_schedule_1_1_schedule.html#aaced633c8e76ffb4d7fd30a07a52e471',1,'MySchedule::Schedule']]],
+  ['myschedule_1',['MySchedule',['../namespace_my_schedule.html',1,'']]]
 ];

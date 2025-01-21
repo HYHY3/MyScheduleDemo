@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['task_5finfo_5fmax_5fnumber_0',['TASK_INFO_MAX_NUMBER',['../namespace_my_schedule.html#a8d613d3a36bae944e96e45d7757a18ec',1,'MySchedule']]]
+  ['_7eschedule_0',['~Schedule',['../class_my_schedule_1_1_schedule.html#a4ec542d7f342c32f1c013129e7ceb52d',1,'MySchedule::Schedule']]]
 ];

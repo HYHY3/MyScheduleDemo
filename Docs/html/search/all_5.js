@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['schedule_0',['Schedule',['../class_my_schedule_1_1_schedule.html',1,'MySchedule::Schedule'],['../class_my_schedule_1_1_schedule.html#ac90c58e089515d0cc6ecab527bc2dd8c',1,'MySchedule::Schedule::Schedule(size_t maxCount)']]],
-  ['searchschedule_1',['searchSchedule',['../class_my_schedule_1_1_schedule.html#afa5fe2821df3a254b872635075699bb3',1,'MySchedule::Schedule']]]
+  ['task_5finfo_5fmax_5fnumber_0',['TASK_INFO_MAX_NUMBER',['../namespace_my_schedule.html#a8d613d3a36bae944e96e45d7757a18ec',1,'MySchedule']]]
 ];
