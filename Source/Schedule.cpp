@@ -10,31 +10,31 @@ constexpr auto DATETIME_FORMAT_NUMBER = 12;
 /**
 * @brief the validity year: 1900 - present
 */
-constexpr auto DATETIM_YEAR_BEGIN = 1900;
+constexpr auto DATETIME_YEAR_BEGIN = 1900;
 
 /**
 * @brief the validity month: 1 - 12
 */
-constexpr auto DATETIM_MONTH_BEGIN = 1;
-constexpr auto DATETIM_MONTH_END = 12;
+constexpr auto DATETIME_MONTH_BEGIN = 1;
+constexpr auto DATETIME_MONTH_END = 12;
 
 /**
 * @brief the validity day: 1 - 31
 */
-constexpr auto DATETIM_DAY_BEGIN = 1;
-constexpr auto DATETIM_DAY_END = 31;
+constexpr auto DATETIME_DAY_BEGIN = 1;
+constexpr auto DATETIME_DAY_END = 31;
 
 /**
 * @brief the validity hour: 0 - 23
 */
-constexpr auto DATETIM_HOUR_BEGIN = 0;
-constexpr auto DATETIM_HOUR_END = 23;
+constexpr auto DATETIME_HOUR_BEGIN = 0;
+constexpr auto DATETIME_HOUR_END = 23;
 
 /**
 * @brief the validity minute: 0 - 59
 */
-constexpr auto DATETIM_MINUTE_BEGIN = 0;
-constexpr auto DATETIM_MINUTE_END = 59;
+constexpr auto DATETIME_MINUTE_BEGIN = 0;
+constexpr auto DATETIME_MINUTE_END = 59;
 
 /**
 * @brief the maximum character number of each task info is 256
@@ -54,6 +54,9 @@ std::string Schedule::getLastErrorMsg() const {
 }
 
 bool Schedule::isValidDateTime(const std::string& dateTime) {
+    // no error message
+    mLastErrorMsg.clear();
+
     // check length
     if (dateTime.length() != DATETIME_FORMAT_NUMBER) {
         mLastErrorMsg = "the length of input datetime is invalid!";
@@ -73,31 +76,57 @@ bool Schedule::isValidDateTime(const std::string& dateTime) {
     auto minute = std::stoi(dateTime.substr(10, 2));	// offset = 10, length = 2
 
     // check year
-    if (year < DATETIM_YEAR_BEGIN) {
+    if (year < DATETIME_YEAR_BEGIN) {
         mLastErrorMsg = "the year of input datetime is invalid!";
         return false;
     }
 
     // check month
-    if (month < DATETIM_MONTH_BEGIN || month > DATETIM_MONTH_END) {
+    if (month < DATETIME_MONTH_BEGIN || month > DATETIME_MONTH_END) {
         mLastErrorMsg = "the month of input datetime is invalid!";
         return false;
     }
 
     // check day
-    if (day < DATETIM_DAY_BEGIN || day > DATETIM_DAY_END) {
+    if (day < DATETIME_DAY_BEGIN || day > DATETIME_DAY_END) {
         mLastErrorMsg = "the day of input datetime is invalid!";
         return false;
     }
 
+    // check 30-day months
+    if ((month == 4) || (month == 6) || (month == 9) || (month == 11)) {
+        if (day > 30) {
+            mLastErrorMsg = "the day of input datetime is invalid!";
+            return false;
+        }
+    }
+
+    // check day of February
+    if (month == 2) {
+        if (((year % 4 == 0) && (year % 100 != 0) || (year % 400 == 0))) {
+            // leap year
+            if (day > 29) {
+                mLastErrorMsg = "the day of input datetime is invalid!";
+                return false;
+            }
+        }
+        else {
+            // non-leap year
+            if (day > 28) {
+                mLastErrorMsg = "the day of input datetime is invalid!";
+                return false;
+            }
+        }
+    }
+
     // check hour
-    if (hour < DATETIM_HOUR_BEGIN || hour > DATETIM_HOUR_END) {
+    if (hour < DATETIME_HOUR_BEGIN || hour > DATETIME_HOUR_END) {
         mLastErrorMsg = "the hour of input datetime is invalid!";
         return false;
     }
 
     // check minute
-    if (minute < DATETIM_MINUTE_BEGIN || minute > DATETIM_MINUTE_END) {
+    if (minute < DATETIME_MINUTE_BEGIN || minute > DATETIME_MINUTE_END) {
         mLastErrorMsg = "the minute of input datetime is invalid!";
         return false;
     }
@@ -107,35 +136,17 @@ bool Schedule::isValidDateTime(const std::string& dateTime) {
 
 std::string Schedule::extractTaskInfo(const std::string& task) {
     size_t curPos = 0;
-    size_t charLength = 0;
     int validatedCount = 0;
 
+    // no error message
+    mLastErrorMsg.clear();
+
+    // extract task info from the input data
     while ((validatedCount < TASK_INFO_MAX_NUMBER) && (curPos < task.length())) {
         // determine byte length of the first character
         unsigned char byte1 = static_cast<unsigned char>(task[curPos]);
-        if ((byte1 & 0x80) == 0x00) {
-            // single-byte character (ASCII)
-            charLength = 1;
-        }
-        else if ((byte1 & 0xE0) == 0xC0) {
-            // two-byte character
-            charLength = 2;
-        }
-        else if ((byte1 & 0xF0) == 0xE0) {
-            // three-byte character
-            charLength = 3;
-        }
-        else if ((byte1 & 0xF8) == 0xF0) {
-            // four-byte character (rare extension kanji or emoji)
-            charLength = 4;
-        }
-        else {
-            mLastErrorMsg = "encoding of the input data is not UTF-8!";
-            break;
-        }
-
-        if (charLength != 3) { // common japanese characters are 3-byte sequences in UTF-8.
-            mLastErrorMsg = "the character is not the first character of 3-byte UTF-8!";
+        if ((byte1 & 0xF0) != 0xE0) {            
+            mLastErrorMsg = "only supporting Full-width characters with UTF-8 encoding!";
             break;
         }
 
@@ -143,7 +154,7 @@ std::string Schedule::extractTaskInfo(const std::string& task) {
         unsigned char byte2 = task[curPos + 1];
         unsigned char byte3 = task[curPos + 2];
         if (((byte2 & 0xC0) != 0x80) || ((byte3 & 0xC0) != 0x80)) {
-            mLastErrorMsg = "the character is not the second or third character of 3-byte UTF-8!";
+            mLastErrorMsg = "only supporting Full-width characters with UTF-8 encoding!";
             break;
         }
 
@@ -159,6 +170,7 @@ std::string Schedule::extractTaskInfo(const std::string& task) {
             curPos += 3; // move to the next character in 3-byte sequences UTF-8
             continue;
         }
+        mLastErrorMsg = "only supporting Full-width characters with UTF-8 encoding!";
         break;
     }
 
@@ -166,16 +178,19 @@ std::string Schedule::extractTaskInfo(const std::string& task) {
 }
 
 bool Schedule::addSchedule(const std::string& dateTime, const std::string& task) {
+    // no error message
+    mLastErrorMsg.clear();
+
     // check input datetime
     if (!isValidDateTime(dateTime)) {
-        mLastErrorMsg = "the input datetime is invalid!";
+        mLastErrorMsg = "the input datetime is invalid!" + mLastErrorMsg;
         return false;
     }
 
     // check input task
     std::string extractedTaskInfo = extractTaskInfo(task);
     if (extractedTaskInfo.empty()) {
-        mLastErrorMsg = "the input task is empty!";
+        mLastErrorMsg = "the task info is empty!" + mLastErrorMsg;
         return false;
     }
 
@@ -193,19 +208,23 @@ bool Schedule::addSchedule(const std::string& dateTime, const std::string& task)
         mScheduleList[dateTime].emplace(extractedTaskInfo);
         ++mCurrentScheduleNumber;
     }
+
     return true;
 }
 
 std::pair<ScheduleListType::const_iterator, ScheduleListType::const_iterator> Schedule::searchSchedule(const std::string& startT, const std::string& endT) {
+    // no error message
+    mLastErrorMsg.clear();
+
     // check start datetime
     if (!isValidDateTime(startT)) {
-        mLastErrorMsg = "the start datetime is invalid!";
+        mLastErrorMsg = "the start datetime is invalid!" + mLastErrorMsg;
         return std::make_pair(mScheduleList.end(), mScheduleList.end());
     }
 
     // check end datetime
     if (!isValidDateTime(endT)) {
-        mLastErrorMsg = "the end datetime is invalid!";
+        mLastErrorMsg = "the end datetime is invalid!" + mLastErrorMsg;
         return std::make_pair(mScheduleList.end(), mScheduleList.end());
     }
 
@@ -220,12 +239,13 @@ std::pair<ScheduleListType::const_iterator, ScheduleListType::const_iterator> Sc
 
     // get the first schedule info
     ScheduleListType::iterator startSchedule = mScheduleList.lower_bound(startT);	// the index of first datetime >= startT
-    if (startSchedule == mScheduleList.end()) {
-        mLastErrorMsg = "no schedule to show!";
-        return std::make_pair(mScheduleList.end(), mScheduleList.end());
-    }
     // get the last schedule info
     ScheduleListType::iterator endSchedule = mScheduleList.upper_bound(endT);	// the index of first datetime > end
+
+    if (startSchedule == endSchedule) {
+        mLastErrorMsg = "no schedule to show!";
+    }
+
     return std::make_pair(startSchedule, endSchedule);
 }
 
