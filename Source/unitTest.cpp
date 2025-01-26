@@ -1,4 +1,4 @@
-﻿#include "stdafx.h"
+#include "stdafx.h"
 #include "CppUnitTest.h"
 #include "../DemoSchedule/Schedule.h"
 
@@ -206,15 +206,11 @@ public:
         Assert::AreEqual(std::string("the schedule list is full. can not add a new one!"), schedule.getLastErrorMsg());
     }
 
-    BEGIN_TEST_METHOD_ATTRIBUTE(TestsearchSchedule)
-        TEST_PRIORITY(1)
-    END_TEST_METHOD_ATTRIBUTE()
-
     TEST_METHOD(TestsearchSchedule)
     {
         Schedule schedule(6);
 
-        // added 5 schedules
+        // add 5 schedules
         Assert::IsTrue(schedule.addSchedule("200907231645", u8"予定１"));
         Assert::AreEqual(std::string(), schedule.getLastErrorMsg());
         Assert::IsTrue(schedule.addSchedule("201905180647", u8"予定２ー１"));
